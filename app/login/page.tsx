@@ -61,12 +61,11 @@ export default function LoginPage() {
 
 
         <button
-          onClick={handleLogin}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg"
-        >
-          Login
-        </button>
-
+  onClick={() => alert("Button is working")}
+  className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg"
+>
+  Login
+</button>
 
       </div>
 
