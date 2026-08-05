@@ -12,6 +12,8 @@ import CategoryChart from "../../components/CategoryChart";
 import MonthlyReport from "../../components/MonthlyReport";
 import ExportCSV from "../../components/ExportCSV";
 import PDFReport from "../../components/PDFReport";
+import TurnoverPrediction from "../../components/TurnoverPrediction";
+import { useRouter } from "next/navigation";
 
 type Sale = {
   billNumber: string;
@@ -34,6 +36,11 @@ type Expense = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
+
+const logout = () => {
+  router.push("/login");
+};
   const [sales, setSales] = useState<Sale[]>([]);
   const [search, setSearch] = useState("");
   const [expenses, setExpenses] = useState<Expense>({
@@ -100,53 +107,195 @@ useEffect(() => {
         )
       : null;
       const clearAllData = () => {
-  if (confirm("Are you sure you want to clear all data?")) {
-    localStorage.removeItem("sales");
-    localStorage.removeItem("expenses");
 
-    setSales([]);
+if (confirm("Are you sure you want to clear all data?")) {
+  localStorage.removeItem("sales");
+  localStorage.removeItem("expenses");
 
-    setExpenses({
-      staffSalary: 0,
-      rent: 0,
-      electricity: 0,
-      water: 0,
-      rawMaterials: 0,
-      otherExpenses: 0,
-    });
-  }
+  setSales([]);
+
+  setExpenses({
+    staffSalary: 0,
+    rent: 0,
+    electricity: 0,
+    water: 0,
+    rawMaterials: 0,
+    otherExpenses: 0,
+  });
+
+}
 };
 
  return (
-  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-8">
-    <div className="bg-blue-700 text-white rounded-xl p-6 mb-6 shadow-lg">
+  
+
+  <div>
+
+    {/* Header */}
+    <div className="bg-gradient-to-r from-blue-700 to-blue-500 text-white p-6 shadow-lg">
+
   <h1 className="text-4xl font-bold">
-    🍽 Restaurant Turnover Analyzer
+    🍽 Restaurant Monthly Turnover Analyzer
   </h1>
 
   <p className="mt-2 text-lg">
-    Sales • Expenses • Profit • Reports
+    Smart Dashboard for Sales, Expenses & Business Growth
   </p>
+
 </div>
 
-    <MenuForm onAddSale={handleAddSale} />
 
-    <ExpenseForm onSaveExpenses={handleSaveExpenses} />
+    <div className="flex flex-col md:flex-row">
 
-    <DashboardCards
-      totalRevenue={totalRevenue}
-      totalExpenses={totalExpenses}
-      totalProfit={totalProfit}
-      bestSellingItem={
-        bestSellingItem ? bestSellingItem.menuItem : "No Data"
-      }
-    />
 
-    <div className="flex gap-4 mt-6 mb-6">
+      {/* Sidebar */}
+      <div className="w-full md:w-64 bg-white min-h-screen p-5 shadow-lg border-r">
 
-  <ExportCSV sales={sales} />
+        <h2 className="text-xl font-bold mb-6">
+          Menu
+        </h2>
 
-  <PDFReport
+
+        <ul className="space-y-4">
+
+
+          <li>
+            <a
+              href="/dashboard"
+              className="hover:text-blue-600"
+            >
+              📊 Dashboard
+            </a>
+          </li>
+
+
+          <li>
+            <a
+              href="/menu"
+              className="hover:text-blue-600"
+            >
+              🍔 Menu Management
+            </a>
+          </li>
+
+
+          <li>
+            <a
+              href="/expenses"
+              className="hover:text-blue-600"
+            >
+              💰 Expenses
+            </a>
+          </li>
+
+
+          <li>
+            <a
+              href="/reports"
+              className="hover:text-blue-600"
+            >
+              📈 Reports
+            </a>
+          </li>
+
+
+          <li>
+            <a
+              href="/export"
+              className="hover:text-blue-600"
+            >
+              📄 Export
+            </a>
+          </li>
+
+
+        </ul>
+
+
+
+        <button
+          onClick={logout}
+          className="mt-10 bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg w-full"
+        >
+          🚪 Logout
+        </button>
+
+
+      </div>
+
+
+
+      {/* Main Content */}
+      <div className="flex-1 p-6">
+
+
+        <MenuForm 
+          onAddSale={handleAddSale} 
+        />
+
+
+        <ExpenseForm
+          onSaveExpenses={handleSaveExpenses}
+        />
+
+
+
+        <DashboardCards
+          totalRevenue={totalRevenue}
+          totalExpenses={totalExpenses}
+          totalProfit={totalProfit}
+          bestSellingItem={
+            bestSellingItem
+              ? bestSellingItem.menuItem
+              : "No Data"
+          }
+        />
+
+
+
+        <TurnoverPrediction
+          totalRevenue={totalRevenue}
+          totalProfit={totalProfit}
+        />
+
+
+
+        <SalesTable 
+          sales={filteredSales} 
+        />
+
+
+
+        <div className="mt-8 bg-white p-6 rounded-xl shadow-lg">
+
+  <h2 className="text-2xl font-bold mb-4">
+    📊 Revenue Analysis
+  </h2>
+
+  <RevenueChart sales={sales} />
+
+</div>
+
+
+<div className="mt-8 bg-white p-6 rounded-xl shadow-lg">
+
+  <h2 className="text-2xl font-bold mb-4">
+    🍽 Category Performance
+  </h2>
+
+  <CategoryChart sales={sales} />
+
+</div>
+
+
+
+        <div className="mt-8 bg-white p-6 rounded-xl shadow-lg">
+
+  <h2 className="text-2xl font-bold mb-4">
+    📄 Monthly Report
+  </h2>
+
+  <MonthlyReport
     sales={sales}
     totalRevenue={totalRevenue}
     totalExpenses={totalExpenses}
@@ -155,50 +304,23 @@ useEffect(() => {
 
 </div>
 
-    <div className="mt-6">
-      <input
-        type="text"
-        placeholder="🔍 Search Menu Item..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full border rounded-lg p-3"
-      />
+
+
+        <button
+          onClick={clearAllData}
+          className="mt-6 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg"
+        >
+          🗑 Clear All Data
+        </button>
+
+
+      </div>
+
+
     </div>
 
-    <SalesTable sales={filteredSales} />
 
-    <RevenueChart sales={sales} />
-
-    <ReportSummary sales={sales} />
-
-    <CategoryChart sales={sales} />
-
-    <MonthlyReport
-      sales={sales}
-      totalRevenue={totalRevenue}
-      totalExpenses={totalExpenses}
-      totalProfit={totalProfit}
-    />
-
-    <div className="mt-6">
-      <button
-        onClick={clearAllData}
-        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg"
-      >
-        🗑 Clear All Data
-      </button>
-    </div>
-<footer className="mt-12 text-center text-gray-600">
-  <hr className="mb-4" />
-
-  <p className="font-semibold">
-    Restaurant Monthly Turnover Analyzer
-  </p>
-
-  <p>Developed by Sarath Kumar</p>
-
-  <p>© 2026 All Rights Reserved</p>
-</footer>
   </div>
+
 );
 }
