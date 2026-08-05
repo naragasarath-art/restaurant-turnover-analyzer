@@ -11,14 +11,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
 
-  const handleLogin = () => {
+  function handleLogin() {
+
+    console.log("Login button clicked");
 
     if (
       email === "admin@gmail.com" &&
       password === "admin123"
     ) {
 
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
 
     } else {
 
@@ -26,16 +28,13 @@ export default function LoginPage() {
 
     }
 
-  };
+  }
 
 
   return (
-
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
 
-
       <div className="bg-white p-8 rounded-xl shadow-lg w-96">
-
 
         <h1 className="text-2xl font-bold text-center mb-6">
           🍽 Restaurant Monthly Turnover Analyzer
@@ -47,7 +46,7 @@ export default function LoginPage() {
           type="email"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e)=>setEmail(e.target.value)}
         />
 
 
@@ -56,22 +55,21 @@ export default function LoginPage() {
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e)=>setPassword(e.target.value)}
         />
 
 
         <button
-  onClick={() => alert("Button is working")}
-  className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg"
->
-  Login
-</button>
+          type="button"
+          onClick={handleLogin}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg"
+        >
+          Login
+        </button>
+
 
       </div>
 
-
     </div>
-
   );
-
 }
