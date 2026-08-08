@@ -136,7 +136,22 @@ if (confirm("Are you sure you want to clear all data?")) {
 const [activeMenu, setActiveMenu] = useState("dashboard");
 
  return (
+  <>
+  <div className="flex justify-end gap-3 mb-4">
+    <button
+      onClick={() => router.back()}
+      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow"
+    >
+      ← Back
+    </button>
 
+    <button
+      onClick={() => router.forward()}
+      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
+    >
+      Next →
+    </button>
+  </div>
 
   <div className="flex min-h-screen bg-gray-100">
 
@@ -330,4 +345,5 @@ const [activeMenu, setActiveMenu] = useState("dashboard");
     </div>
     <ChatBot />
   </div>
+</>
 );}
