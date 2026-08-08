@@ -14,6 +14,9 @@ import ExportCSV from "../../components/ExportCSV";
 import PDFReport from "../../components/PDFReport";
 import TurnoverPrediction from "../../components/TurnoverPrediction";
 import { useRouter } from "next/navigation";
+import MenuManagement from "../../components/MenuManagement";
+import MenuCard from "../../components/MenuCard";
+import ChatBot from "../../components/ChatBot";
 
 type Sale = {
   billNumber: string;
@@ -41,6 +44,11 @@ export default function DashboardPage() {
 const logout = () => {
   router.push("/login");
 };
+const [selectedMenuItem, setSelectedMenuItem] = useState<{
+  name: string;
+  category: string;
+  price: number;
+} | null>(null);
   const [sales, setSales] = useState<Sale[]>([]);
   const [search, setSearch] = useState("");
   const [expenses, setExpenses] = useState<Expense>({
@@ -125,202 +133,201 @@ if (confirm("Are you sure you want to clear all data?")) {
 
 }
 };
+const [activeMenu, setActiveMenu] = useState("dashboard");
 
  return (
-  
-
-  <div>
-
-    {/* Header */}
-    <div className="bg-gradient-to-r from-blue-700 to-blue-500 text-white p-6 shadow-lg">
-
-  <h1 className="text-4xl font-bold">
-    🍽 Restaurant Monthly Turnover Analyzer
-  </h1>
-
-  <p className="mt-2 text-lg">
-    Smart Dashboard for Sales, Expenses & Business Growth
-  </p>
-
-</div>
 
 
-    <div className="flex flex-col md:flex-row">
+  <div className="flex min-h-screen bg-gray-100">
 
+    {/* Sidebar */}
+    <div className="w-64 bg-white shadow-lg p-5">
 
-      {/* Sidebar */}
-      <div className="w-full md:w-64 bg-white min-h-screen p-5 shadow-lg border-r">
-
-        <h2 className="text-xl font-bold mb-6">
-          Menu
-        </h2>
-
-
-        <ul className="space-y-4">
-
-
-          <li>
-            <a
-              href="/dashboard"
-              className="hover:text-blue-600"
-            >
-              📊 Dashboard
-            </a>
-          </li>
-
-
-          <li>
-            <a
-              href="/menu"
-              className="hover:text-blue-600"
-            >
-              🍔 Menu Management
-            </a>
-          </li>
-
-
-          <li>
-            <a
-              href="/expenses"
-              className="hover:text-blue-600"
-            >
-              💰 Expenses
-            </a>
-          </li>
-
-
-          <li>
-            <a
-              href="/reports"
-              className="hover:text-blue-600"
-            >
-              📈 Reports
-            </a>
-          </li>
-
-
-          <li>
-            <a
-              href="/export"
-              className="hover:text-blue-600"
-            >
-              📄 Export
-            </a>
-          </li>
-
-
-        </ul>
-
-
-
-        <button
-          onClick={logout}
-          className="mt-10 bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg w-full"
+      <h2 className="text-xl font-bold mb-6">
+        Menu
+      </h2>
+      <ul className="space-y-4">
+        <li
+          onClick={() => setActiveMenu("dashboard")}
+          className="cursor-pointer hover:text-blue-600"
         >
-          🚪 Logout
-        </button>
+          📊 Dashboard
+        </li>
 
-
-      </div>
-
-
-
-      {/* Main Content */}
-      <div className="flex-1 p-6">
-
-
-        <MenuForm 
-          onAddSale={handleAddSale} 
-        />
-
-
-        <ExpenseForm
-          onSaveExpenses={handleSaveExpenses}
-        />
-
-
-
-        <DashboardCards
-          totalRevenue={totalRevenue}
-          totalExpenses={totalExpenses}
-          totalProfit={totalProfit}
-          bestSellingItem={
-            bestSellingItem
-              ? bestSellingItem.menuItem
-              : "No Data"
-          }
-        />
-
-
-
-        <TurnoverPrediction
-          totalRevenue={totalRevenue}
-          totalProfit={totalProfit}
-        />
-
-
-
-        <SalesTable 
-          sales={filteredSales} 
-        />
-
-
-
-        <div className="mt-8 bg-white p-6 rounded-xl shadow-lg">
-
-  <h2 className="text-2xl font-bold mb-4">
-    📊 Revenue Analysis
-  </h2>
-
-  <RevenueChart sales={sales} />
-
-</div>
-
-
-<div className="mt-8 bg-white p-6 rounded-xl shadow-lg">
-
-  <h2 className="text-2xl font-bold mb-4">
-    🍽 Category Performance
-  </h2>
-
-  <CategoryChart sales={sales} />
-
-</div>
-
-
-
-        <div className="mt-8 bg-white p-6 rounded-xl shadow-lg">
-
-  <h2 className="text-2xl font-bold mb-4">
-    📄 Monthly Report
-  </h2>
-
-  <MonthlyReport
-    sales={sales}
-    totalRevenue={totalRevenue}
-    totalExpenses={totalExpenses}
-    totalProfit={totalProfit}
-  />
-
-</div>
-
-
-
-        <button
-          onClick={clearAllData}
-          className="mt-6 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg"
+        <li
+          onClick={() => setActiveMenu("menu")}
+          className="cursor-pointer hover:text-blue-600"
         >
-          🗑 Clear All Data
-        </button>
+          🍔 Menu Management
+        </li>
 
+        <li
+          onClick={() => setActiveMenu("expenses")}
+          className="cursor-pointer hover:text-blue-600"
+        >
+          💰 Expenses
+        </li>
 
-      </div>
+        <li
+          onClick={() => setActiveMenu("reports")}
+          className="cursor-pointer hover:text-blue-600"
+        >
+          📈 Reports
+        </li>
 
+        <li
+          onClick={() => setActiveMenu("export")}
+          className="cursor-pointer hover:text-blue-600"
+        >
+          📄 Export
+        </li>
+
+      </ul>
+
+      <button
+        onClick={logout}
+        className="mt-10 bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg w-full"
+      >
+        🚪 Logout
+      </button>
 
     </div>
 
+    {/* Main Content */}
+    <div className="flex-1 p-6">
+      {/* Main Content */}
+
+  {/* Dashboard Header */}
+  <div className="mb-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+
+    <h1 className="text-3xl font-bold">
+      🍽 Restaurant Monthly Turnover Analyzer
+    </h1>
+
+    <p className="mt-2 text-lg">
+      Smart Dashboard for Sales, Expenses & Business Growth
+    </p>
 
   </div>
 
-);
-}
+    {activeMenu === "dashboard" && (
+<>
+  {/* Menu Card */}
+  <div className="mt-6">
+    <MenuCard
+      onSelect={(item) => setSelectedMenuItem(item)}
+    />
+  </div>
+
+
+  {/* Add Sales Entry */}
+  <div className="mt-6">
+    <MenuForm
+      onAddSale={handleAddSale}
+      selectedMenuItem={selectedMenuItem}
+    />
+  </div>
+
+
+  {/* Sales Table */}
+  <div className="mt-6">
+    <SalesTable sales={filteredSales} />
+  </div>
+
+
+  {/* Monthly Expenses */}
+  <div className="mt-6">
+    <ExpenseForm
+      onSaveExpenses={handleSaveExpenses}
+    />
+  </div>
+
+
+  {/* Four Cards */}
+  <div className="mt-6">
+    <DashboardCards
+      totalRevenue={totalRevenue}
+      totalExpenses={totalExpenses}
+      totalProfit={totalProfit}
+      bestSellingItem={
+        bestSellingItem
+          ? bestSellingItem.menuItem
+          : "No Data"
+      }
+    />
+  </div>
+
+
+  {/* Charts */}
+  <div className="mt-6">
+    <RevenueChart sales={sales} />
+  </div>
+
+
+  <div className="mt-6">
+    <CategoryChart sales={sales} />
+  </div>
+
+
+  {/* Prediction */}
+  <div className="mt-6">
+    <TurnoverPrediction
+      totalRevenue={totalRevenue}
+      totalProfit={totalProfit}
+    />
+  </div>
+
+
+  {/* Monthly Report */}
+  <div className="mt-6">
+    <MonthlyReport
+      sales={sales}
+      totalRevenue={totalRevenue}
+      totalExpenses={totalExpenses}
+      totalProfit={totalProfit}
+    />
+  </div>
+
+</>
+)}
+      {activeMenu === "menu" && (
+        <MenuManagement />
+      )}
+
+      {activeMenu === "expenses" && (
+        <ExpenseForm onSaveExpenses={handleSaveExpenses} />
+      )}
+
+      {activeMenu === "reports" && (
+        <MonthlyReport
+          sales={sales}
+          totalRevenue={totalRevenue}
+          totalExpenses={totalExpenses}
+          totalProfit={totalProfit}
+        />
+      )}
+
+      {activeMenu === "export" && (
+        <div className="space-y-4">
+          <ExportCSV sales={sales} />
+
+          <PDFReport
+            sales={sales}
+            totalRevenue={totalRevenue}
+            totalExpenses={totalExpenses}
+            totalProfit={totalProfit}
+          />
+        </div>
+      )}
+
+      <button
+        onClick={clearAllData}
+        className="mt-6 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg"
+      >
+        🗑 Clear All Data
+      </button>
+
+    </div>
+    <ChatBot />
+  </div>
+);}
