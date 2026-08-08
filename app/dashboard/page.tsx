@@ -135,23 +135,67 @@ if (confirm("Are you sure you want to clear all data?")) {
 };
 const [activeMenu, setActiveMenu] = useState("dashboard");
 
+const [menuHistory, setMenuHistory] = useState<string[]>([
+  "dashboard",
+]);
+
+const [historyIndex, setHistoryIndex] = useState(0);
+
+const navigateToMenu = (menu: string) => {
+  const newHistory = menuHistory.slice(0, historyIndex + 1);
+
+  if (newHistory[newHistory.length - 1] === menu) {
+    return;
+  }
+
+  newHistory.push(menu);
+
+  setMenuHistory(newHistory);
+  setHistoryIndex(newHistory.length - 1);
+  setActiveMenu(menu);
+};
+
+const handleBack = () => {
+  if (historyIndex > 0) {
+    const newIndex = historyIndex - 1;
+
+    setHistoryIndex(newIndex);
+    setActiveMenu(menuHistory[newIndex]);
+  }
+};
+
+const handleNext = () => {
+  if (historyIndex < menuHistory.length - 1) {
+    const newIndex = historyIndex + 1;
+
+    setHistoryIndex(newIndex);
+    setActiveMenu(menuHistory[newIndex]);
+  }
+};
+
  return (
   <>
-  <div className="flex justify-end gap-3 mb-4">
-    <button
-      onClick={() => router.back()}
-      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow"
-    >
-      ← Back
-    </button>
+  <button
+  type="button"
+  onClick={(e) => {
+    e.preventDefault();
+    handleBack();
+  }}
+  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow"
+>
+  ← Back
+</button>
 
     <button
-      onClick={() => router.forward()}
-      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
-    >
-      Next →
-    </button>
-  </div>
+  type="button"
+  onClick={(e) => {
+    e.preventDefault();
+    handleNext();
+  }}
+  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
+>
+  Next →
+</button>
 
   <div className="flex min-h-screen bg-gray-100">
 
@@ -163,35 +207,35 @@ const [activeMenu, setActiveMenu] = useState("dashboard");
       </h2>
       <ul className="space-y-4">
         <li
-          onClick={() => setActiveMenu("dashboard")}
+         onClick={() => navigateToMenu("dashboard")}
           className="cursor-pointer hover:text-blue-600"
         >
           📊 Dashboard
         </li>
 
         <li
-          onClick={() => setActiveMenu("menu")}
+          onClick={() => navigateToMenu("menu")}
           className="cursor-pointer hover:text-blue-600"
         >
           🍔 Menu Management
         </li>
 
         <li
-          onClick={() => setActiveMenu("expenses")}
+          onClick={() => navigateToMenu("expenses")}
           className="cursor-pointer hover:text-blue-600"
         >
           💰 Expenses
         </li>
 
         <li
-          onClick={() => setActiveMenu("reports")}
+          onClick={() => navigateToMenu("reports")}
           className="cursor-pointer hover:text-blue-600"
         >
           📈 Reports
         </li>
 
         <li
-          onClick={() => setActiveMenu("export")}
+          onClick={() => navigateToMenu("export")}
           className="cursor-pointer hover:text-blue-600"
         >
           📄 Export
