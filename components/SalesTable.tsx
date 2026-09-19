@@ -1,3 +1,5 @@
+"use client";
+
 type Sale = {
   billNumber: string;
   date: string;
@@ -11,26 +13,58 @@ type Sale = {
 
 type SalesTableProps = {
   sales: Sale[];
+  selectedDate: string;
+  onDateChange: (date: string) => void;
 };
 
-export default function SalesTable({ sales }: SalesTableProps) {
+export default function SalesTable({
+  sales,
+  selectedDate,
+  onDateChange,
+}: SalesTableProps) {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
 
-      <h2 className="text-2xl font-bold mb-5">
-        Sales Entries
-      </h2>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+
+        <h2 className="text-2xl font-bold">
+          Sales Entries
+        </h2>
+
+        <div className="flex items-center gap-2">
+          <label className="font-semibold">
+            Select Date:
+          </label>
+
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="border rounded-lg p-2"
+          />
+
+          {selectedDate && (
+            <button
+              onClick={() => onDateChange("")}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-lg"
+            >
+              All
+            </button>
+          )}
+        </div>
+
+      </div>
 
       {sales.length === 0 ? (
         <p className="text-gray-500">
-          No menu items added yet.
+          No sales entries found for the selected date.
         </p>
       ) : (
         <div className="overflow-x-auto">
+
           <table className="w-full border-collapse border border-gray-300">
 
             <thead className="bg-gray-100">
-
               <tr>
                 <th className="border p-3">Bill No</th>
                 <th className="border p-3">Date</th>
@@ -41,13 +75,10 @@ export default function SalesTable({ sales }: SalesTableProps) {
                 <th className="border p-3">Price (₹)</th>
                 <th className="border p-3">Revenue (₹)</th>
               </tr>
-
             </thead>
 
             <tbody>
-
               {sales.map((sale, index) => (
-
                 <tr key={index}>
 
                   <td className="border p-3">
@@ -83,12 +114,11 @@ export default function SalesTable({ sales }: SalesTableProps) {
                   </td>
 
                 </tr>
-
               ))}
-
             </tbody>
 
           </table>
+
         </div>
       )}
 

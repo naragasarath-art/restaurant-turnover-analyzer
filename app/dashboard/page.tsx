@@ -17,6 +17,9 @@ import { useRouter } from "next/navigation";
 import MenuManagement from "../../components/MenuManagement";
 import MenuCard from "../../components/MenuCard";
 import ChatBot from "../../components/ChatBot";
+import { supabase } from "../../lib/supabaseClient";
+import ExpenseTable from "../../components/ExpenseTable";
+
 
 type Sale = {
   billNumber: string;
@@ -30,6 +33,8 @@ type Sale = {
 };
 
 type Expense = {
+  id?: number;
+  expenseDate: string;
   staffSalary: number;
   rent: number;
   electricity: number;
@@ -41,7 +46,8 @@ type Expense = {
 export default function DashboardPage() {
   const router = useRouter();
 
-const logout = () => {
+const logout = async () => {
+  await supabase.auth.signOut();
   router.push("/login");
 };
 const [selectedMenuItem, setSelectedMenuItem] = useState<{
@@ -50,60 +56,180 @@ const [selectedMenuItem, setSelectedMenuItem] = useState<{
   price: number;
 } | null>(null);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [selectedDate, setSelectedDate] = useState("");
   const [search, setSearch] = useState("");
-  const [expenses, setExpenses] = useState<Expense>({
-  
-    staffSalary: 0,
-    rent: 0,
-    electricity: 0,
-    water: 0,
-    rawMaterials: 0,
-    otherExpenses: 0,
-  });
+ const [expenses, setExpenses] = useState<Expense>({
+  expenseDate: new Date().toISOString().split("T")[0],
+  staffSalary: 0,
+  rent: 0,
+  electricity: 0,
+  water: 0,
+  rawMaterials: 0,
+  otherExpenses: 0,
+});
+
+const [expenseHistory, setExpenseHistory] = useState<Expense[]>([]);
+
+const [selectedExpenseDate, setSelectedExpenseDate] =
+  useState("");
   useEffect(() => {
-  const savedSales = localStorage.getItem("sales");
-  const savedExpenses = localStorage.getItem("expenses");
+  const checkUser = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-  if (savedSales) {
-    setSales(JSON.parse(savedSales));
+    if (!session) {
+      router.replace("/login");
+      return;
+    }
+
+    const response = await fetch("/api/sales", {
+  headers: {
+    Authorization: `Bearer ${session.access_token}`,
+  },
+});
+
+if (response.ok) {
+  const data = await response.json();
+
+  const formattedSales = data.map((sale: any) => ({
+    billNumber: sale.bill_number,
+    date: sale.date,
+    paymentMethod: sale.payment_method,
+    menuItem: sale.menu_item,
+    category: sale.category,
+    quantity: Number(sale.quantity),
+    price: Number(sale.price),
+    revenue: Number(sale.revenue),
+  }));
+
+  setSales(formattedSales);
+}
+    const expenseResponse = await fetch("/api/expenses", {
+  headers: {
+    Authorization: `Bearer ${session.access_token}`,
+  },
+});
+
+if (expenseResponse.ok) {
+  const expenseData = await expenseResponse.json();
+
+  const formattedExpenses = expenseData.map((expense: any) => ({
+    id: expense.id,
+    expenseDate: expense.expense_date,
+    staffSalary: Number(expense.staff_salary) || 0,
+    rent: Number(expense.rent) || 0,
+    electricity: Number(expense.electricity) || 0,
+    water: Number(expense.water) || 0,
+    rawMaterials: Number(expense.raw_materials) || 0,
+    otherExpenses: Number(expense.other_expenses) || 0,
+  }));
+
+  setExpenseHistory(formattedExpenses);
+
+  if (formattedExpenses.length > 0) {
+    setExpenses(formattedExpenses[0]);
   }
+}
+  };
 
-  if (savedExpenses) {
-    setExpenses(JSON.parse(savedExpenses));
-  }
-}, []);
+  checkUser();
+}, [router]);
 
-useEffect(() => {
-  localStorage.setItem("sales", JSON.stringify(sales));
-}, [sales]);
 
-useEffect(() => {
-  localStorage.setItem("expenses", JSON.stringify(expenses));
-}, [expenses]);
 
-  const handleAddSale = (sale: Sale) => {
+
+
+  const handleAddSale = async (sale: Sale) => {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      alert("Please login first.");
+      return;
+    }
+
+    const response = await fetch("/api/sales", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(sale),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to save sale");
+    }
+
+    // Add the sale to the dashboard
     setSales((prev) => [...prev, sale]);
-  };
+  } catch (error) {
+    console.error(error);
+    alert("Could not save the sale.");
+  }
+};
 
-  const handleSaveExpenses = (expense: Expense) => {
-    setExpenses(expense);
-  };
-  const filteredSales = sales.filter((sale) =>
-  sale.menuItem.toLowerCase().includes(search.toLowerCase())
-);
+ const handleSaveExpenses = (expense: Expense) => {
+  setExpenses(expense);
+
+  setExpenseHistory((prev) => {
+    const existing = prev.find(
+      (item) => item.expenseDate === expense.expenseDate
+    );
+
+    if (existing) {
+      return prev.map((item) =>
+        item.expenseDate === expense.expenseDate
+          ? {
+              ...expense,
+              id: existing.id,
+            }
+          : item
+      );
+    }
+
+    return [...prev, expense];
+  });
+
+};
+ const filteredSales = sales.filter((sale) => {
+  const matchesSearch = sale.menuItem
+    .toLowerCase()
+    .includes(search.toLowerCase());
+
+  const matchesDate =
+    selectedDate === "" || sale.date === selectedDate;
+
+  return matchesSearch && matchesDate;
+});
+const filteredExpenses = expenseHistory.filter((expense) => {
+  return (
+    selectedExpenseDate === "" ||
+    expense.expenseDate === selectedExpenseDate
+  );
+});
 
   const totalRevenue = sales.reduce(
     (sum, sale) => sum + sale.revenue,
     0
   );
 
-  const totalExpenses =
-    expenses.staffSalary +
-    expenses.rent +
-    expenses.electricity +
-    expenses.water +
-    expenses.rawMaterials +
-    expenses.otherExpenses;
+  const totalExpenses = expenseHistory.reduce(
+  (sum, expense) =>
+    sum +
+    expense.staffSalary +
+    expense.rent +
+    expense.electricity +
+    expense.water +
+    expense.rawMaterials +
+    expense.otherExpenses,
+  0
+);
 
   const totalProfit = totalRevenue - totalExpenses;
 
@@ -114,24 +240,69 @@ useEffect(() => {
           current.revenue > best.revenue ? current : best
         )
       : null;
-      const clearAllData = () => {
+    
 
-if (confirm("Are you sure you want to clear all data?")) {
-  localStorage.removeItem("sales");
-  localStorage.removeItem("expenses");
+const clearAllData = async () => {
+  if (!confirm("Are you sure you want to clear all data?")) {
+    return;
+  }
 
-  setSales([]);
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-  setExpenses({
-    staffSalary: 0,
-    rent: 0,
-    electricity: 0,
-    water: 0,
-    rawMaterials: 0,
-    otherExpenses: 0,
-  });
+    if (!session) {
+      alert("Please login first.");
+      return;
+    }
 
-}
+    const salesResponse = await fetch("/api/sales", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!salesResponse.ok) {
+      const data = await salesResponse.json();
+      throw new Error(data.error || "Failed to clear sales");
+    }
+
+    const expenseResponse = await fetch("/api/expenses", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!expenseResponse.ok) {
+      const data = await expenseResponse.json();
+      throw new Error(data.error || "Failed to clear expenses");
+    }
+
+    setSales([]);
+    setExpenseHistory([]);
+
+    setExpenses({
+      expenseDate: new Date().toISOString().split("T")[0],
+      staffSalary: 0,
+      rent: 0,
+      electricity: 0,
+      water: 0,
+      rawMaterials: 0,
+      otherExpenses: 0,
+    });
+
+    alert("All your sales and expenses have been cleared.");
+  } catch (error) {
+    console.error("Clear data error:", error);
+    alert("Could not clear all data.");
+  }
 };
 const [activeMenu, setActiveMenu] = useState("dashboard");
 
@@ -290,7 +461,11 @@ const handleNext = () => {
 
   {/* Sales Table */}
   <div className="mt-6">
-    <SalesTable sales={filteredSales} />
+    <SalesTable
+  sales={filteredSales}
+  selectedDate={selectedDate}
+  onDateChange={setSelectedDate}
+/>
   </div>
 
 
@@ -300,6 +475,13 @@ const handleNext = () => {
       onSaveExpenses={handleSaveExpenses}
     />
   </div>
+  <div className="mt-6">
+  <ExpenseTable
+    expenses={filteredExpenses}
+    selectedDate={selectedExpenseDate}
+    onDateChange={setSelectedExpenseDate}
+  />
+</div>
 
 
   {/* Four Cards */}
@@ -354,8 +536,24 @@ const handleNext = () => {
       )}
 
       {activeMenu === "expenses" && (
-        <ExpenseForm onSaveExpenses={handleSaveExpenses} />
-      )}
+  <>
+    <h2 className="text-3xl font-bold mb-6">
+      💰 Expenses
+    </h2>
+
+    <ExpenseForm
+      onSaveExpenses={handleSaveExpenses}
+    />
+
+    <div className="mt-6">
+      <ExpenseTable
+        expenses={filteredExpenses}
+        selectedDate={selectedExpenseDate}
+        onDateChange={setSelectedExpenseDate}
+      />
+    </div>
+  </>
+)}
 
       {activeMenu === "reports" && (
         <MonthlyReport
@@ -371,11 +569,13 @@ const handleNext = () => {
           <ExportCSV sales={sales} />
 
           <PDFReport
-            sales={sales}
-            totalRevenue={totalRevenue}
-            totalExpenses={totalExpenses}
-            totalProfit={totalProfit}
-          />
+  sales={filteredSales}
+  expenses={filteredExpenses}
+  totalRevenue={totalRevenue}
+  totalExpenses={totalExpenses}
+  totalProfit={totalProfit}
+  selectedDate={selectedDate}
+/>
         </div>
       )}
 

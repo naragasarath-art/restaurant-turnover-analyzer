@@ -27,7 +27,7 @@ async function getUserId(request: Request) {
   return user.id;
 }
 
-// GET expenses
+// Get all expenses for the logged-in account
 export async function GET(request: Request) {
   try {
     const userId = await getUserId(request);
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST expenses
+// Save or update expenses for a particular date
 export async function POST(request: Request) {
   try {
     const userId = await getUserId(request);
@@ -92,15 +92,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check whether expenses already exist for this user and date
-    const { data: existingExpense } = await supabase
-      .from("expenses")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("expense_date", expenseDate)
-      .maybeSingle();
+    // Check whether an expense already exists for this date
+    const { data: existingExpense, error: findError } =
+      await supabase
+        .from("expenses")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("expense_date", expenseDate)
+        .maybeSingle();
 
-    // Update existing record
+    if (findError) {
+      return NextResponse.json(
+        { error: findError.message },
+        { status: 500 }
+      );
+    }
+
+    // Update existing expense
     if (existingExpense) {
       const { data, error } = await supabase
         .from("expenses")
@@ -127,7 +135,7 @@ export async function POST(request: Request) {
       return NextResponse.json(data);
     }
 
-    // Create new record
+    // Create new expense
     const { data, error } = await supabase
       .from("expenses")
       .insert([
@@ -161,7 +169,7 @@ export async function POST(request: Request) {
   }
 }
 
-// DELETE expenses
+// Clear all expenses for the logged-in account
 export async function DELETE(request: Request) {
   try {
     const userId = await getUserId(request);
@@ -173,19 +181,10 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const body = await request.json();
-    const { id } = body;
-
-    let query = supabase
+    const { error } = await supabase
       .from("expenses")
       .delete()
       .eq("user_id", userId);
-
-    if (id) {
-      query = query.eq("id", id);
-    }
-
-    const { error } = await query;
 
     if (error) {
       return NextResponse.json(

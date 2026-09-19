@@ -27,7 +27,7 @@ async function getUserId(request: Request) {
   return user.id;
 }
 
-// GET expenses
+// GET - Get sales for logged-in account
 export async function GET(request: Request) {
   try {
     const userId = await getUserId(request);
@@ -40,10 +40,10 @@ export async function GET(request: Request) {
     }
 
     const { data, error } = await supabase
-      .from("expenses")
+      .from("sales")
       .select("*")
       .eq("user_id", userId)
-      .order("expense_date", { ascending: false });
+      .order("id", { ascending: false });
 
     if (error) {
       return NextResponse.json(
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST expenses
+// POST - Add a sale
 export async function POST(request: Request) {
   try {
     const userId = await getUserId(request);
@@ -76,70 +76,29 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const {
-      expenseDate,
-      staffSalary,
-      rent,
-      electricity,
-      water,
-      rawMaterials,
-      otherExpenses,
+      billNumber,
+      date,
+      paymentMethod,
+      menuItem,
+      category,
+      quantity,
+      price,
+      revenue,
     } = body;
 
-    if (!expenseDate) {
-      return NextResponse.json(
-        { error: "Expense date is required." },
-        { status: 400 }
-      );
-    }
-
-    // Check whether expenses already exist for this user and date
-    const { data: existingExpense } = await supabase
-      .from("expenses")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("expense_date", expenseDate)
-      .maybeSingle();
-
-    // Update existing record
-    if (existingExpense) {
-      const { data, error } = await supabase
-        .from("expenses")
-        .update({
-          staff_salary: Number(staffSalary) || 0,
-          rent: Number(rent) || 0,
-          electricity: Number(electricity) || 0,
-          water: Number(water) || 0,
-          raw_materials: Number(rawMaterials) || 0,
-          other_expenses: Number(otherExpenses) || 0,
-        })
-        .eq("id", existingExpense.id)
-        .eq("user_id", userId)
-        .select()
-        .single();
-
-      if (error) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json(data);
-    }
-
-    // Create new record
     const { data, error } = await supabase
-      .from("expenses")
+      .from("sales")
       .insert([
         {
           user_id: userId,
-          expense_date: expenseDate,
-          staff_salary: Number(staffSalary) || 0,
-          rent: Number(rent) || 0,
-          electricity: Number(electricity) || 0,
-          water: Number(water) || 0,
-          raw_materials: Number(rawMaterials) || 0,
-          other_expenses: Number(otherExpenses) || 0,
+          bill_number: billNumber,
+          date,
+          payment_method: paymentMethod,
+          menu_item: menuItem,
+          category,
+          quantity: Number(quantity) || 0,
+          price: Number(price) || 0,
+          revenue: Number(revenue) || 0,
         },
       ])
       .select()
@@ -161,7 +120,7 @@ export async function POST(request: Request) {
   }
 }
 
-// DELETE expenses
+// DELETE - Delete one sale or all sales
 export async function DELETE(request: Request) {
   try {
     const userId = await getUserId(request);
@@ -173,15 +132,25 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const body = await request.json();
-    const { id } = body;
+    let body: any = {};
+
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
+    }
+
+    const id = body?.id;
 
     let query = supabase
-      .from("expenses")
+      .from("sales")
       .delete()
       .eq("user_id", userId);
 
-    if (id) {
+    // If an ID is provided, delete only that sale.
+    // If no ID is provided, delete all sales
+    // belonging to the logged-in account.
+    if (id !== undefined && id !== null && id !== "") {
       query = query.eq("id", id);
     }
 

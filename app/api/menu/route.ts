@@ -27,7 +27,7 @@ async function getUserId(request: Request) {
   return user.id;
 }
 
-// GET expenses
+// GET — load only the logged-in user's menu
 export async function GET(request: Request) {
   try {
     const userId = await getUserId(request);
@@ -40,10 +40,10 @@ export async function GET(request: Request) {
     }
 
     const { data, error } = await supabase
-      .from("expenses")
+      .from("menu_items")
       .select("*")
       .eq("user_id", userId)
-      .order("expense_date", { ascending: false });
+      .order("id", { ascending: true });
 
     if (error) {
       return NextResponse.json(
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json(data || []);
+    return NextResponse.json(data);
   } catch {
     return NextResponse.json(
       { error: "Something went wrong." },
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST expenses
+// POST — add menu item to the logged-in user's account
 export async function POST(request: Request) {
   try {
     const userId = await getUserId(request);
@@ -75,71 +75,25 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    const {
-      expenseDate,
-      staffSalary,
-      rent,
-      electricity,
-      water,
-      rawMaterials,
-      otherExpenses,
-    } = body;
+    const { name, category, price } = body;
 
-    if (!expenseDate) {
+    if (!name || !category || price === undefined) {
       return NextResponse.json(
-        { error: "Expense date is required." },
+        {
+          error: "Name, category and price are required.",
+        },
         { status: 400 }
       );
     }
 
-    // Check whether expenses already exist for this user and date
-    const { data: existingExpense } = await supabase
-      .from("expenses")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("expense_date", expenseDate)
-      .maybeSingle();
-
-    // Update existing record
-    if (existingExpense) {
-      const { data, error } = await supabase
-        .from("expenses")
-        .update({
-          staff_salary: Number(staffSalary) || 0,
-          rent: Number(rent) || 0,
-          electricity: Number(electricity) || 0,
-          water: Number(water) || 0,
-          raw_materials: Number(rawMaterials) || 0,
-          other_expenses: Number(otherExpenses) || 0,
-        })
-        .eq("id", existingExpense.id)
-        .eq("user_id", userId)
-        .select()
-        .single();
-
-      if (error) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json(data);
-    }
-
-    // Create new record
     const { data, error } = await supabase
-      .from("expenses")
+      .from("menu_items")
       .insert([
         {
+          name,
+          category,
+          price: Number(price),
           user_id: userId,
-          expense_date: expenseDate,
-          staff_salary: Number(staffSalary) || 0,
-          rent: Number(rent) || 0,
-          electricity: Number(electricity) || 0,
-          water: Number(water) || 0,
-          raw_materials: Number(rawMaterials) || 0,
-          other_expenses: Number(otherExpenses) || 0,
         },
       ])
       .select()
@@ -161,7 +115,7 @@ export async function POST(request: Request) {
   }
 }
 
-// DELETE expenses
+// DELETE — delete only the logged-in user's menu item
 export async function DELETE(request: Request) {
   try {
     const userId = await getUserId(request);
@@ -173,19 +127,13 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const body = await request.json();
-    const { id } = body;
+    const { id } = await request.json();
 
-    let query = supabase
-      .from("expenses")
+    const { error } = await supabase
+      .from("menu_items")
       .delete()
+      .eq("id", id)
       .eq("user_id", userId);
-
-    if (id) {
-      query = query.eq("id", id);
-    }
-
-    const { error } = await query;
 
     if (error) {
       return NextResponse.json(
@@ -199,8 +147,8 @@ export async function DELETE(request: Request) {
     });
   } catch {
     return NextResponse.json(
-      { error: "Something went wrong." },
-      { status: 500 }
+      { error: "Invalid request." },
+      { status: 400 }
     );
   }
 }

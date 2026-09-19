@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 type Expense = {
+  expenseDate: string;
   staffSalary: number;
   rent: number;
   electricity: number;
@@ -18,6 +20,10 @@ type ExpenseFormProps = {
 export default function ExpenseForm({
   onSaveExpenses,
 }: ExpenseFormProps) {
+  const [expenseDate, setExpenseDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+
   const [staffSalary, setStaffSalary] = useState("");
   const [rent, setRent] = useState("");
   const [electricity, setElectricity] = useState("");
@@ -25,15 +31,54 @@ export default function ExpenseForm({
   const [rawMaterials, setRawMaterials] = useState("");
   const [otherExpenses, setOtherExpenses] = useState("");
 
-  const handleSave = () => {
-    onSaveExpenses({
-      staffSalary: Number(staffSalary || 0),
-      rent: Number(rent || 0),
-      electricity: Number(electricity || 0),
-      water: Number(water || 0),
-      rawMaterials: Number(rawMaterials || 0),
-      otherExpenses: Number(otherExpenses || 0),
-    });
+  const handleSave = async () => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert("Please login first.");
+        return;
+      }
+
+      if (!expenseDate) {
+        alert("Please select an expense date.");
+        return;
+      }
+
+      const expense = {
+        expenseDate,
+        staffSalary: Number(staffSalary || 0),
+        rent: Number(rent || 0),
+        electricity: Number(electricity || 0),
+        water: Number(water || 0),
+        rawMaterials: Number(rawMaterials || 0),
+        otherExpenses: Number(otherExpenses || 0),
+      };
+
+      const response = await fetch("/api/expenses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(expense),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save expenses");
+      }
+
+      onSaveExpenses(expense);
+
+      alert("Expenses saved successfully!");
+    } catch (error) {
+      console.error("Expense save error:", error);
+      alert("Could not save expenses.");
+    }
   };
 
   return (
@@ -43,6 +88,20 @@ export default function ExpenseForm({
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* Expense Date */}
+        <div className="flex flex-col">
+          <label className="font-semibold mb-2">
+            Expense Date
+          </label>
+
+          <input
+            type="date"
+            value={expenseDate}
+            onChange={(e) => setExpenseDate(e.target.value)}
+            className="border rounded-lg p-3"
+          />
+        </div>
 
         <input
           type="number"
