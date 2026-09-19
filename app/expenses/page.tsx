@@ -1,206 +1,99 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+"use client";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { useEffect, useState } from "react";
+import ExpenseForm from "../../components/ExpenseForm";
+import ExpenseTable from "../../components/ExpenseTable";
 
-async function getUserId(request: Request) {
-  const authHeader = request.headers.get("authorization");
+type Expense = {
+  id?: number;
+  expenseDate: string;
+  staffSalary: number;
+  rent: number;
+  electricity: number;
+  water: number;
+  rawMaterials: number;
+  otherExpenses: number;
+};
 
-  if (!authHeader) {
-    return null;
-  }
+export default function ExpensesPage() {
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [selectedDate, setSelectedDate] = useState("");
 
-  const token = authHeader.replace("Bearer ", "");
+  const loadExpenses = async () => {
+    try {
+      const response = await fetch("/api/expenses", {
+        cache: "no-store",
+      });
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(token);
+      if (!response.ok) {
+        return;
+      }
 
-  if (error || !user) {
-    return null;
-  }
+      const data = await response.json();
 
-  return user.id;
-}
+      const formattedExpenses = Array.isArray(data)
+        ? data.map((expense: any) => ({
+            id: expense.id,
+            expenseDate: expense.expense_date,
+            staffSalary: Number(expense.staff_salary) || 0,
+            rent: Number(expense.rent) || 0,
+            electricity: Number(expense.electricity) || 0,
+            water: Number(expense.water) || 0,
+            rawMaterials: Number(expense.raw_materials) || 0,
+            otherExpenses: Number(expense.other_expenses) || 0,
+          }))
+        : [];
 
-// GET expenses
-export async function GET(request: Request) {
-  try {
-    const userId = await getUserId(request);
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      setExpenses(formattedExpenses);
+    } catch (error) {
+      console.error("Expense loading error:", error);
     }
+  };
 
-    const { data, error } = await supabase
-      .from("expenses")
-      .select("*")
-      .eq("user_id", userId)
-      .order("expense_date", { ascending: false });
+  useEffect(() => {
+    loadExpenses();
+  }, []);
 
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
+  const handleSaveExpenses = (expense: Expense) => {
+    setExpenses((prev) => {
+      const existing = prev.find(
+        (item) => item.expenseDate === expense.expenseDate
       );
-    }
 
-    return NextResponse.json(data || []);
-  } catch {
-    return NextResponse.json(
-      { error: "Something went wrong." },
-      { status: 500 }
-    );
-  }
-}
-
-// POST expenses
-export async function POST(request: Request) {
-  try {
-    const userId = await getUserId(request);
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-
-    const {
-      expenseDate,
-      staffSalary,
-      rent,
-      electricity,
-      water,
-      rawMaterials,
-      otherExpenses,
-    } = body;
-
-    if (!expenseDate) {
-      return NextResponse.json(
-        { error: "Expense date is required." },
-        { status: 400 }
-      );
-    }
-
-    // Check whether expenses already exist for this user and date
-    const { data: existingExpense } = await supabase
-      .from("expenses")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("expense_date", expenseDate)
-      .maybeSingle();
-
-    // Update existing record
-    if (existingExpense) {
-      const { data, error } = await supabase
-        .from("expenses")
-        .update({
-          staff_salary: Number(staffSalary) || 0,
-          rent: Number(rent) || 0,
-          electricity: Number(electricity) || 0,
-          water: Number(water) || 0,
-          raw_materials: Number(rawMaterials) || 0,
-          other_expenses: Number(otherExpenses) || 0,
-        })
-        .eq("id", existingExpense.id)
-        .eq("user_id", userId)
-        .select()
-        .single();
-
-      if (error) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 500 }
+      if (existing) {
+        return prev.map((item) =>
+          item.expenseDate === expense.expenseDate
+            ? { ...expense, id: existing.id }
+            : item
         );
       }
 
-      return NextResponse.json(data);
-    }
-
-    // Create new record
-    const { data, error } = await supabase
-      .from("expenses")
-      .insert([
-        {
-          user_id: userId,
-          expense_date: expenseDate,
-          staff_salary: Number(staffSalary) || 0,
-          rent: Number(rent) || 0,
-          electricity: Number(electricity) || 0,
-          water: Number(water) || 0,
-          raw_materials: Number(rawMaterials) || 0,
-          other_expenses: Number(otherExpenses) || 0,
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(data, { status: 201 });
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid request." },
-      { status: 400 }
-    );
-  }
-}
-
-// DELETE expenses
-export async function DELETE(request: Request) {
-  try {
-    const userId = await getUserId(request);
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const { id } = body;
-
-    let query = supabase
-      .from("expenses")
-      .delete()
-      .eq("user_id", userId);
-
-    if (id) {
-      query = query.eq("id", id);
-    }
-
-    const { error } = await query;
-
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
+      return [...prev, expense];
     });
-  } catch {
-    return NextResponse.json(
-      { error: "Something went wrong." },
-      { status: 500 }
-    );
-  }
+  };
+
+  const filteredExpenses = expenses.filter(
+    (expense) =>
+      selectedDate === "" || expense.expenseDate === selectedDate
+  );
+
+  return (
+    <main className="min-h-screen bg-gray-100 p-6">
+      <h1 className="text-3xl font-bold mb-6">
+        💰 Expenses
+      </h1>
+
+      <ExpenseForm
+        onSaveExpenses={handleSaveExpenses}
+      />
+
+      <div className="mt-6">
+        <ExpenseTable
+          expenses={filteredExpenses}
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
+        />
+      </div>
+    </main>
+  );
 }
