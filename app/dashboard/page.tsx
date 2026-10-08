@@ -19,7 +19,7 @@ import MenuCard from "../../components/MenuCard";
 import ChatBot from "../../components/ChatBot";
 import { supabase } from "../../lib/supabaseClient";
 import ExpenseTable from "../../components/ExpenseTable";
-
+import WordReport from "@/components/WordReport";
 
 type Sale = {
   billNumber: string;
@@ -329,9 +329,10 @@ const navigateToMenu = (menu: string) => {
 const handleBack = () => {
   if (historyIndex > 0) {
     const newIndex = historyIndex - 1;
-
     setHistoryIndex(newIndex);
     setActiveMenu(menuHistory[newIndex]);
+  } else {
+    window.location.href = "/login";
   }
 };
 
@@ -567,6 +568,7 @@ const handleNext = () => {
       {activeMenu === "export" && (
         <div className="space-y-4">
           <ExportCSV sales={sales} />
+          <WordReport sales={sales} />
 
           <PDFReport
   sales={filteredSales}

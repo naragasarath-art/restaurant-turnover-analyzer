@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 type ChatMessage = {
   sender: "user" | "bot";
@@ -33,16 +34,24 @@ export default function ChatBot() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: userMessage,
-        }),
-      });
+     const {
+  data: { session },
+} = await supabase.auth.getSession();
 
+if (!session) {
+  throw new Error("Please login first.");
+}
+
+const response = await fetch("/api/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${session.access_token}`,
+  },
+  body: JSON.stringify({
+    message: userMessage,
+  }),
+});
       const data = await response.json();
 
       if (!response.ok) {
@@ -53,7 +62,7 @@ export default function ChatBot() {
         ...previous,
         {
           sender: "bot",
-          text: data.reply,
+          text: data.answer,
         },
       ]);
     } catch (error) {
