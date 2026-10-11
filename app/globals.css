@@ -17,3 +17,93 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* Restaurant dashboard theme colors */
+:root {
+  color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-text: #0f172a;
+  --app-card: #ffffff;
+  --app-border: #e2e8f0;
+}
+
+html.dark {
+  color-scheme: dark;
+  --app-bg: #0f172a;
+  --app-text: #f1f5f9;
+  --app-card: #1e293b;
+  --app-border: #334155;
+}
+
+html,
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}
+
+.theme-bg {
+  background-color: var(--app-bg);
+}
+
+.theme-text {
+  color: var(--app-text);
+}
+
+.theme-card {
+  background-color: var(--app-card);
+  border: 1px solid var(--app-border);
+}
+
+.theme-border {
+  border-color: var(--app-border);
+}
+/* Dark mode support for dashboard cards, tables and forms */
+html.dark .bg-white {
+  background-color: #1e293b;
+}
+
+html.dark .bg-slate-50 {
+  background-color: #0f172a;
+}
+
+html.dark .bg-slate-100 {
+  background-color: #334155;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-700 {
+  color: #f1f5f9;
+}
+
+html.dark .text-slate-600,
+html.dark .text-slate-500 {
+  color: #cbd5e1;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300 {
+  border-color: #475569;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #0f172a;
+  color: #f1f5f9;
+  border-color: #475569;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94a3b8;
+}
+
+html.dark th {
+  background-color: #334155;
+  color: #f1f5f9;
+}
+
+html.dark td {
+  color: #e2e8f0;
+}

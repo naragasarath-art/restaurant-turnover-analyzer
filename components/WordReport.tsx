@@ -2,13 +2,16 @@
 "use client";
 
 import {
+  AlignmentType,
   Document,
+  HeadingLevel,
   Packer,
   Paragraph,
   Table,
   TableCell,
   TableRow,
   TextRun,
+  WidthType,
 } from "docx";
 import { saveAs } from "file-saver";
 
@@ -24,366 +27,211 @@ type Sale = {
 };
 
 type Expense = {
-  staffSalary?: number;
-  rent?: number;
-  electricity?: number;
-  water?: number;
-  rawMaterials?: number;
-  otherExpenses?: number;
+  id?: number;
+  expenseDate: string;
+  staffSalary: number;
+  rent: number;
+  electricity: number;
+  water: number;
+  rawMaterials: number;
+  otherExpenses: number;
 };
 
 type WordReportProps = {
   sales: Sale[];
+  expenses: Expense[];
+  totalRevenue: number;
+  totalExpenses: number;
+  totalProfit: number;
+  selectedDate?: string;
 };
 
-export default function WordReport({ sales }: WordReportProps) {
-  const exportWord = async () => {
-    if (sales.length === 0) {
-      alert("No sales data available.");
-      return;
-    }
+const money = (v: number) => `Rs. ${Number(v || 0).toFixed(2)}`;
 
-    const totalRevenue = sales.reduce(
-      (total, sale) => total + Number(sale.revenue || 0),
-      0
-    );
+const paragraph = (text: string, bold = false) =>
+  new Paragraph({
+    children: [new TextRun({ text, bold })],
+    spacing: { after: 100 },
+  });
 
-    const totalQuantity = sales.reduce(
-      (total, sale) => total + Number(sale.quantity || 0),
-      0
-    );
+const heading = (text: string) =>
+  new Paragraph({
+    text,
+    heading: HeadingLevel.HEADING_1,
+    spacing: { before: 220, after: 120 },
+  });
 
-    // Get expense details from localStorage
-    let expense: Expense = {};
+function makeTable(headers: string[], rows: (string | number)[][]) {
+  const actualRows = rows.length ? rows : [["No records available"]];
 
-    try {
-      const savedExpenses = localStorage.getItem("expenses");
-
-      if (savedExpenses) {
-        const parsedExpenses = JSON.parse(savedExpenses);
-
-        // Supports both object and array expense storage
-        if (Array.isArray(parsedExpenses)) {
-          expense = parsedExpenses.reduce(
-            (total, item) => ({
-              staffSalary:
-                Number(total.staffSalary || 0) +
-                Number(item.staffSalary || 0),
-              rent:
-                Number(total.rent || 0) +
-                Number(item.rent || 0),
-              electricity:
-                Number(total.electricity || 0) +
-                Number(item.electricity || 0),
-              water:
-                Number(total.water || 0) +
-                Number(item.water || 0),
-              rawMaterials:
-                Number(total.rawMaterials || 0) +
-                Number(item.rawMaterials || 0),
-              otherExpenses:
-                Number(total.otherExpenses || 0) +
-                Number(item.otherExpenses || 0),
-            }),
-            {}
-          );
-        } else {
-          expense = parsedExpenses;
-        }
-      }
-    } catch (error) {
-      console.error("Error reading expenses:", error);
-    }
-
-    const staffSalary = Number(expense.staffSalary || 0);
-    const rent = Number(expense.rent || 0);
-    const electricity = Number(expense.electricity || 0);
-    const water = Number(expense.water || 0);
-    const rawMaterials = Number(expense.rawMaterials || 0);
-    const otherExpenses = Number(expense.otherExpenses || 0);
-
-    const totalExpenses =
-      staffSalary +
-      rent +
-      electricity +
-      water +
-      rawMaterials +
-      otherExpenses;
-
-    const netProfit = totalRevenue - totalExpenses;
-
-    const tableRows = [
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
       new TableRow({
-        children: [
-          "Bill Number",
-          "Date",
-          "Payment Method",
-          "Menu Item",
-          "Category",
-          "Quantity",
-          "Price",
-          "Revenue",
-        ].map(
-          (header) =>
+        tableHeader: true,
+        children: headers.map(
+          h =>
             new TableCell({
-              children: [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: header,
-                      bold: true,
-                    }),
-                  ],
-                }),
-              ],
+              children: [paragraph(h, true)],
+              shading: { fill: "DCE6F1" },
             })
         ),
       }),
-
-      ...sales.map(
-        (sale) =>
-          new TableRow({
-            children: [
-              sale.billNumber,
-              sale.date,
-              sale.paymentMethod || "",
-              sale.menuItem,
-              sale.category,
-              String(sale.quantity),
-              `Rs. ${Number(sale.price || 0).toFixed(2)}`,
-              `Rs. ${Number(sale.revenue || 0).toFixed(2)}`,
-            ].map(
-              (value) =>
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      children: [new TextRun(String(value))],
-                    }),
-                  ],
-                })
-            ),
-          })
-      ),
-    ];
-
-    // Expense details table
-    const expenseRows = [
-      ["Staff Salary", staffSalary],
-      ["Rent", rent],
-      ["Electricity", electricity],
-      ["Water", water],
-      ["Raw Materials", rawMaterials],
-      ["Other Expenses", otherExpenses],
-    ].map(
-      ([name, amount]) =>
+      ...actualRows.map(row =>
         new TableRow({
-          children: [
+          children: headers.map((_, index) =>
             new TableCell({
               children: [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: String(name),
-                      bold: true,
-                    }),
-                  ],
-                }),
+                paragraph(
+                  row.length === 1 && row[0] === "No records available"
+                    ? index === 0 ? "No records available" : ""
+                    : String(row[index] ?? "")
+                ),
               ],
-            }),
-            new TableCell({
-              children: [
-                new Paragraph({
-                  text: `Rs. ${Number(amount).toFixed(2)}`,
-                }),
-              ],
-            }),
-          ],
+            })
+          ),
         })
+      ),
+    ],
+  });
+}
+
+export default function WordReport({
+  sales,
+  expenses = [],
+  totalRevenue,
+  totalExpenses,
+  totalProfit,
+  selectedDate,
+}: WordReportProps) {
+  const exportWord = async () => {
+    const totalQuantity = sales.reduce(
+      (sum, s) => sum + Number(s.quantity || 0), 0
     );
 
+    const bestSelling = sales.length
+      ? sales.reduce((best, current) =>
+          current.revenue > best.revenue ? current : best
+        )
+      : null;
+
+    const predictedRevenue = totalRevenue * 1.1;
+    const predictedProfit = predictedRevenue - totalExpenses;
+
+    const performance =
+      totalProfit > 50000 ? "Excellent" :
+      totalProfit > 20000 ? "Good" :
+      totalProfit > 0 ? "Positive" :
+      "Needs Improvement";
+
+    const expenseRows = expenses.map(e => {
+      const total =
+        Number(e.staffSalary || 0) +
+        Number(e.rent || 0) +
+        Number(e.electricity || 0) +
+        Number(e.water || 0) +
+        Number(e.rawMaterials || 0) +
+        Number(e.otherExpenses || 0);
+
+      return [
+        e.expenseDate,
+        money(e.staffSalary),
+        money(e.rent),
+        money(e.electricity),
+        money(e.water),
+        money(e.rawMaterials),
+        money(e.otherExpenses),
+        money(total),
+      ];
+    });
+
     const doc = new Document({
+      creator: "Restaurant Monthly Turnover Analyzer",
+      title: "Restaurant Monthly Turnover Report",
       sections: [
         {
           children: [
             new Paragraph({
-              alignment: "center",
+              alignment: AlignmentType.CENTER,
               children: [
                 new TextRun({
                   text: "RESTAURANT MONTHLY TURNOVER ANALYZER",
                   bold: true,
-                  size: 28,
+                  size: 30,
+                  color: "1E40AF",
                 }),
               ],
+              spacing: { after: 100 },
             }),
 
             new Paragraph({
-              alignment: "center",
+              alignment: AlignmentType.CENTER,
               children: [
                 new TextRun({
-                  text: "SALES AND EXPENSES REPORT",
-                  bold: true,
-                  size: 24,
-                }),
-              ],
-            }),
-
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Report Generated On: ${new Date().toLocaleDateString(
-                    "en-IN"
-                  )}`,
-                }),
-              ],
-            }),
-
-            new Paragraph({ text: "" }),
-
-            // SALES SUMMARY
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "SALES SUMMARY",
+                  text: "MONTHLY BUSINESS PERFORMANCE REPORT",
                   bold: true,
                   size: 22,
                 }),
               ],
+              spacing: { after: 200 },
             }),
+
+            paragraph(`Generated on: ${new Date().toLocaleDateString("en-IN")}`),
+            paragraph(`Report period: ${selectedDate || "All available dates"}`),
+
+            heading("1. Sales Entries"),
+            paragraph(`Total sales entries: ${sales.length}`),
+            paragraph(`Total quantity sold: ${totalQuantity}`),
+            makeTable(
+              ["Bill Number", "Date", "Payment", "Menu Item", "Category", "Qty", "Price", "Revenue"],
+              sales.map(s => [
+                s.billNumber, s.date, s.paymentMethod || "",
+                s.menuItem, s.category, s.quantity,
+                money(s.price), money(s.revenue),
+              ])
+            ),
+
+            heading("2. Monthly Expenses"),
+            makeTable(
+              ["Expense Date", "Salary", "Rent", "Electricity", "Water", "Materials", "Other", "Total"],
+              expenseRows
+            ),
+            paragraph(`Total expenses: ${money(totalExpenses)}`, true),
+
+            heading("3. Business Overview"),
+            makeTable(["Metric", "Value"], [
+              ["Total Revenue", money(totalRevenue)],
+              ["Total Expenses", money(totalExpenses)],
+              [totalProfit >= 0 ? "Net Profit" : "Net Loss", money(Math.abs(totalProfit))],
+              ["Best-Selling Item (highest revenue entry)", bestSelling?.menuItem || "No sales data"],
+              ["Total Sales Entries", sales.length],
+              ["Total Items Sold", totalQuantity],
+            ]),
+
+            heading("4. Monthly Turnover Prediction"),
+            paragraph(
+              "Prediction method: estimated 10% revenue growth assumption. This is an estimate, not a guarantee."
+            ),
+            makeTable(["Prediction Metric", "Value"], [
+              ["Current Revenue", money(totalRevenue)],
+              ["Estimated Growth", "10%"],
+              ["Predicted Next-Month Turnover", money(predictedRevenue)],
+              ["Indicative Profit if Expenses Stay Unchanged", money(predictedProfit)],
+            ]),
+
+            heading("5. Monthly Report"),
+            makeTable(["Monthly Summary", "Value"], [
+              ["Report Period", selectedDate || "All available dates"],
+              ["Revenue", money(totalRevenue)],
+              ["Expenses", money(totalExpenses)],
+              [totalProfit >= 0 ? "Profit" : "Loss", money(Math.abs(totalProfit))],
+              ["Business Performance", performance],
+            ]),
 
             new Paragraph({
-              text: `Total Sales Entries: ${sales.length}`,
-            }),
-
-            new Paragraph({
-              text: `Total Quantity Sold: ${totalQuantity}`,
-            }),
-
-            new Paragraph({
-              text: `Total Revenue: Rs. ${totalRevenue.toFixed(2)}`,
-            }),
-
-            new Paragraph({ text: "" }),
-
-            // SALES DETAILS
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "SALES DETAILS",
-                  bold: true,
-                  size: 22,
-                }),
-              ],
-            }),
-
-            new Table({
-              rows: tableRows,
-            }),
-
-            new Paragraph({ text: "" }),
-
-            // EXPENSE DETAILS
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "EXPENSES DETAILS",
-                  bold: true,
-                  size: 22,
-                }),
-              ],
-            }),
-
-            new Table({
-              rows: [
-                new TableRow({
-                  children: [
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: "Expense Category",
-                              bold: true,
-                            }),
-                          ],
-                        }),
-                      ],
-                    }),
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: "Amount",
-                              bold: true,
-                            }),
-                          ],
-                        }),
-                      ],
-                    }),
-                  ],
-                }),
-
-                ...expenseRows,
-
-                new TableRow({
-                  children: [
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: "TOTAL EXPENSES",
-                              bold: true,
-                            }),
-                          ],
-                        }),
-                      ],
-                    }),
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: `Rs. ${totalExpenses.toFixed(2)}`,
-                              bold: true,
-                            }),
-                          ],
-                        }),
-                      ],
-                    }),
-                  ],
-                }),
-              ],
-            }),
-
-            new Paragraph({ text: "" }),
-
-            // FINAL SUMMARY
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "FINAL SUMMARY",
-                  bold: true,
-                  size: 22,
-                }),
-              ],
-            }),
-
-            new Paragraph({
-              text: `Total Revenue: Rs. ${totalRevenue.toFixed(2)}`,
-            }),
-
-            new Paragraph({
-              text: `Total Expenses: Rs. ${totalExpenses.toFixed(2)}`,
-            }),
-
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Net Profit: Rs. ${netProfit.toFixed(2)}`,
-                  bold: true,
-                }),
-              ],
+              text: "End of Report",
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 300 },
             }),
           ],
         },
@@ -392,15 +240,20 @@ export default function WordReport({ sales }: WordReportProps) {
 
     const blob = await Packer.toBlob(doc);
 
-    saveAs(blob, "Restaurant_Sales_and_Expenses_Report.docx");
+    saveAs(
+      blob,
+      selectedDate
+        ? `Restaurant_Turnover_Report_${selectedDate}.docx`
+        : "Restaurant_Monthly_Turnover_Report.docx"
+    );
   };
 
   return (
     <button
       onClick={exportWord}
-      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
+      className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
     >
-      Export Sales & Expenses Word
+      📝 Download Complete Word Report
     </button>
   );
 }
