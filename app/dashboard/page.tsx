@@ -10,6 +10,8 @@ import RevenueChart from "../../components/RevenueChart";
 import ReportSummary from "../../components/ReportSummary";
 import CategoryChart from "../../components/CategoryChart";
 import MonthlyReport from "../../components/MonthlyReport";
+import ExportCSV from "@/components/ExportCSV";
+import PDFReport from "@/components/PDFReport";
 import TurnoverPrediction from "../../components/TurnoverPrediction";
 import { useRouter } from "next/navigation";
 import MenuManagement from "../../components/MenuManagement";
@@ -17,15 +19,14 @@ import MenuCard from "../../components/MenuCard";
 import ChatBot from "../../components/ChatBot";
 import { supabase } from "../../lib/supabaseClient";
 import ExpenseTable from "../../components/ExpenseTable";
+
 import MonthlyPerformance from "../../components/MonthlyPerformance";
 import MenuPerformance from "../../components/MenuPerformance";
 import BusinessInsights from "../../components/BusinessInsights";
 import InventoryManagement from "@/components/InventoryManagement";
 import ThemeToggle from "@/components/ThemeToggle";
-import PDFReport from "@/components/PDFReport";
-import WordReport from "@/components/WordReport";
-import ExportCSV from "@/components/ExportCSV";
 
+import WordReport from "@/components/WordReport";
 
 type Sale = {
   billNumber: string;
@@ -375,89 +376,49 @@ const handleNext = () => {
   Next →
 </button>
 
-  <div className="flex min-h-screen bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
+  <div className="flex min-h-screen bg-gray-100">
 
     {/* Sidebar */}
-    <div className="w-64 shrink-0 border-r border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="w-64 bg-white shadow-lg p-5">
 
-     <div className="mb-8 border-b border-slate-100 pb-5">
-  <div className="flex items-center gap-3">
-    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-2xl text-white">
-      🍽️
-    </div>
-    <div>
-      <h2 className="text-base font-bold text-slate-900">
-        Restaurant
+      <h2 className="text-xl font-bold mb-6">
+        Menu
       </h2>
-      <p className="text-xs text-slate-500">
-        Analytics Platform
-      </p>
-    </div>
-  </div>
-</div>
       <ul className="space-y-4">
         <li
-  onClick={() => navigateToMenu("dashboard")}
-  className={`cursor-pointer rounded-xl px-4 py-3 text-sm font-medium transition ${
-    activeMenu === "dashboard"
-      ? "bg-blue-50 text-blue-700"
-      : "text-slate-600 hover:bg-slate-50 hover:text-blue-700"
-  }`}
->
-  📊 Dashboard
-</li>
+         onClick={() => navigateToMenu("dashboard")}
+          className="cursor-pointer hover:text-blue-600"
+        >
+          📊 Dashboard
+        </li>
 
-        
-<li
-  onClick={() => navigateToMenu("menu")}
-  className={`cursor-pointer rounded-xl px-4 py-3 text-sm font-medium transition ${
-    activeMenu === "menu"
-      ? "bg-blue-50 text-blue-700"
-      : "text-slate-600 hover:bg-slate-50 hover:text-blue-700"
-  }`}
->
-  🍔 Menu Management
-</li>
+        <li
+          onClick={() => navigateToMenu("menu")}
+          className="cursor-pointer hover:text-blue-600"
+        >
+          🍔 Menu Management
+        </li>
 
+        <li
+          onClick={() => navigateToMenu("expenses")}
+          className="cursor-pointer hover:text-blue-600"
+        >
+          💰 Expenses
+        </li>
 
-       
-<li
-  onClick={() => navigateToMenu("expenses")}
-  className={`cursor-pointer rounded-xl px-4 py-3 text-sm font-medium transition ${
-    activeMenu === "expenses"
-      ? "bg-blue-50 text-blue-700"
-      : "text-slate-600 hover:bg-slate-50 hover:text-blue-700"
-  }`}
->
-  💰 Expenses
-</li>
+        <li
+          onClick={() => navigateToMenu("reports")}
+          className="cursor-pointer hover:text-blue-600"
+        >
+          📈 Reports
+        </li>
 
-
-       
-<li
-  onClick={() => navigateToMenu("reports")}
-  className={`cursor-pointer rounded-xl px-4 py-3 text-sm font-medium transition ${
-    activeMenu === "reports"
-      ? "bg-blue-50 text-blue-700"
-      : "text-slate-600 hover:bg-slate-50 hover:text-blue-700"
-  }`}
->
-  📈 Reports
-</li>
-
-
-        
-<li
-  onClick={() => navigateToMenu("export")}
-  className={`cursor-pointer rounded-xl px-4 py-3 text-sm font-medium transition ${
-    activeMenu === "export"
-      ? "bg-blue-50 text-blue-700"
-      : "text-slate-600 hover:bg-slate-50 hover:text-blue-700"
-  }`}
->
-  📄 Export
-</li>
-
+        <li
+          onClick={() => navigateToMenu("export")}
+          className="cursor-pointer hover:text-blue-600"
+        >
+          📄 Export
+        </li>
 
       </ul>
 
@@ -471,60 +432,39 @@ const handleNext = () => {
     </div>
 
     {/* Main Content */}
-    <div className="min-w-0 flex-1 p-5 md:p-8">
+    <div className="flex-1 p-6">
       {/* Main Content */}
 
   {/* Dashboard Header */}
-  <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between dark:border-slate-700 dark:bg-slate-900">
-  <div>
-    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
-      Restaurant Management System
+  <div className="mb-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+
+    <h1 className="text-3xl font-bold">
+      🍽 Restaurant Monthly Turnover Analyzer
+    </h1>
+
+    <p className="mt-2 text-lg">
+      Smart Dashboard for Sales, Expenses & Business Growth
     </p>
 
-   <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl dark:text-slate-100">
-  Monthly Turnover Analyzer
-</h1>
-
-    <p className="mt-2 text-sm text-slate-500">
-      Monitor sales, expenses, profit and restaurant performance.
-    </p>
   </div>
-
- <div className="flex flex-wrap items-center gap-3">
-  <ThemeToggle />
-
-  <div className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
-    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-    Business Overview
-  </div>
-</div>
-</div>
-
-    
 
     {activeMenu === "dashboard" && (
 <>
-
-{/* Menu Card and Sales Entry - Responsive Layout */}
-<div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-
   {/* Menu Card */}
-  <div className="min-w-0">
+  <div className="mt-6">
     <MenuCard
       onSelect={(item) => setSelectedMenuItem(item)}
     />
   </div>
 
+
   {/* Add Sales Entry */}
-  <div className="min-w-0">
+  <div className="mt-6">
     <MenuForm
       onAddSale={handleAddSale}
       selectedMenuItem={selectedMenuItem}
     />
   </div>
-
-</div>
-
 
 
   {/* Sales Table */}
@@ -596,26 +536,28 @@ const handleNext = () => {
       totalProfit={totalProfit}
     />
   </div>
+
   <div className="mt-6">
-  <MonthlyPerformance
-    sales={sales}
-    expenses={expenseHistory}
-  />
-</div>
-<div className="mt-6">
-  <MenuPerformance sales={sales} />
-</div>
+    <MonthlyPerformance
+      sales={sales}
+      expenses={expenseHistory}
+    />
+  </div>
 
-<div className="mt-6">
-  <BusinessInsights
-    sales={sales}
-    expenses={expenseHistory}
-  />
-</div>
-<div className="mt-6">
-  <InventoryManagement />
-</div>
+  <div className="mt-6">
+    <MenuPerformance sales={sales} />
+  </div>
 
+  <div className="mt-6">
+    <BusinessInsights
+      sales={sales}
+      expenses={expenseHistory}
+    />
+  </div>
+
+  <div className="mt-6">
+    <InventoryManagement />
+  </div>
 
 </>
 )}
@@ -652,37 +594,37 @@ const handleNext = () => {
         />
       )}
 
-      {activeMenu === "export" && (
-        <div className="space-y-4">
-         
-<ExportCSV
-  sales={sales}
-  expenses={expenseHistory}
-  totalRevenue={totalRevenue}
-  totalExpenses={totalExpenses}
-  totalProfit={totalProfit}
-/>
+     
+{activeMenu === "export" && (
+  <div className="space-y-4">
+    <ExportCSV
+      sales={filteredSales}
+      expenses={filteredExpenses}
+      totalRevenue={totalRevenue}
+      totalExpenses={totalExpenses}
+      totalProfit={totalProfit}
+    />
 
-<WordReport
-  sales={sales}
-  expenses={expenseHistory}
-  totalRevenue={totalRevenue}
-  totalExpenses={totalExpenses}
-  totalProfit={totalProfit}
-/>
+    <WordReport
+      sales={filteredSales}
+      expenses={filteredExpenses}
+      totalRevenue={totalRevenue}
+      totalExpenses={totalExpenses}
+      totalProfit={totalProfit}
+    />
+
+    <PDFReport
+      sales={filteredSales}
+      expenses={filteredExpenses}
+      totalRevenue={totalRevenue}
+      totalExpenses={totalExpenses}
+      totalProfit={totalProfit}
+      selectedDate={selectedDate}
+    />
+  </div>
+)}
 
 
-
- <PDFReport
-  sales={filteredSales}
-  expenses={filteredExpenses}
-  totalRevenue={totalRevenue}
-  totalExpenses={totalExpenses}
-  totalProfit={totalProfit}
-  selectedDate={selectedDate}
-/>
-        </div>
-      )}
 
       <button
         onClick={clearAllData}
@@ -695,5 +637,4 @@ const handleNext = () => {
     <ChatBot />
   </div>
 </>
-);
-}
+);}
