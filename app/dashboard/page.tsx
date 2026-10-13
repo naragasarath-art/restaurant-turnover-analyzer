@@ -450,31 +450,34 @@ const handleNext = () => {
 
     {activeMenu === "dashboard" && (
 <>
-  {/* Menu Card */}
-  <div className="mt-6">
+ 
+
+{/* Menu Card and Add Sales Entry Side by Side */}
+<div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+  {/* Menu Card - Left */}
+  <div className="min-w-0">
     <MenuCard
       onSelect={(item) => setSelectedMenuItem(item)}
     />
   </div>
 
-
-  {/* Add Sales Entry */}
-  <div className="mt-6">
+  {/* Add Sales Entry - Right */}
+  <div className="min-w-0">
     <MenuForm
       onAddSale={handleAddSale}
       selectedMenuItem={selectedMenuItem}
     />
   </div>
+</div>
 
-
-  {/* Sales Table */}
-  <div className="mt-6">
-    <SalesTable
-  sales={filteredSales}
-  selectedDate={selectedDate}
-  onDateChange={setSelectedDate}
-/>
-  </div>
+{/* Sales Entries - Below */}
+<div className="mt-6">
+  <SalesTable
+    sales={filteredSales}
+    selectedDate={selectedDate}
+    onDateChange={setSelectedDate}
+  />
+</div>
 
 
   {/* Monthly Expenses */}
