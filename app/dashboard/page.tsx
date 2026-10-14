@@ -204,7 +204,8 @@ if (expenseResponse.ok) {
   });
 
 };
- const filteredSales = sales.filter((sale) => {
+ 
+const filteredSales = sales.filter((sale) => {
   const matchesSearch = sale.menuItem
     .toLowerCase()
     .includes(search.toLowerCase());
@@ -214,6 +215,7 @@ if (expenseResponse.ok) {
 
   return matchesSearch && matchesDate;
 });
+
 const filteredExpenses = expenseHistory.filter((expense) => {
   return (
     selectedExpenseDate === "" ||
@@ -221,12 +223,24 @@ const filteredExpenses = expenseHistory.filter((expense) => {
   );
 });
 
-  const totalRevenue = sales.reduce(
-    (sum, sale) => sum + sale.revenue,
-    0
-  );
+// Use the selected date from either date selector.
+// If neither date is selected, use all available records.
+const dashboardDate = selectedDate || selectedExpenseDate;
 
-  const totalExpenses = expenseHistory.reduce(
+const dashboardSales = sales.filter((sale) =>
+  dashboardDate === "" || sale.date === dashboardDate
+);
+
+const dashboardExpenses = expenseHistory.filter((expense) =>
+  dashboardDate === "" || expense.expenseDate === dashboardDate
+);
+
+const totalRevenue = dashboardSales.reduce(
+  (sum, sale) => sum + sale.revenue,
+  0
+);
+
+const totalExpenses = dashboardExpenses.reduce(
   (sum, expense) =>
     sum +
     expense.staffSalary +
@@ -238,16 +252,15 @@ const filteredExpenses = expenseHistory.filter((expense) => {
   0
 );
 
-  const totalProfit = totalRevenue - totalExpenses;
+const totalProfit = totalRevenue - totalExpenses;
 
-  const bestSellingItem =
-  
-    sales.length > 0
-      ? sales.reduce((best, current) =>
-          current.revenue > best.revenue ? current : best
-        )
-      : null;
-    
+const bestSellingItem =
+  dashboardSales.length > 0
+    ? dashboardSales.reduce((best, current) =>
+        current.revenue > best.revenue ? current : best
+      )
+    : null;
+
 
 const clearAllData = async () => {
   if (!confirm("Are you sure you want to clear all data?")) {
@@ -512,7 +525,7 @@ const handleNext = () => {
 
   {/* Charts */}
   <div className="mt-6">
-    <RevenueChart sales={sales} />
+    <RevenueChart sales={dashboardSales} />
   </div>
 
 
@@ -541,10 +554,7 @@ const handleNext = () => {
   </div>
 
   <div className="mt-6">
-    <MonthlyPerformance
-      sales={sales}
-      expenses={expenseHistory}
-    />
+    <MenuPerformance sales={dashboardSales} />
   </div>
 
   <div className="mt-6">
@@ -553,9 +563,9 @@ const handleNext = () => {
 
   <div className="mt-6">
     <BusinessInsights
-      sales={sales}
-      expenses={expenseHistory}
-    />
+  sales={dashboardSales}
+  expenses={dashboardExpenses}
+/>
   </div>
 
   <div className="mt-6">
